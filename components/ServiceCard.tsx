@@ -87,7 +87,7 @@ export default function ServiceCard({ service, index = 0 }: ServiceCardProps) {
           <div>
             <span className="text-silver-dark text-xs">Starting from</span>
             <div className="text-gold font-bold text-xl">
-              ${service.price.toLocaleString()}
+              $200
               <span className="text-silver-dark text-sm font-normal">/person</span>
             </div>
           </div>

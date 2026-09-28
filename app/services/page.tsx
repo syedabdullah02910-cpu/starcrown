@@ -86,14 +86,40 @@ export default function ServicesPage() {
       setLoading(true);
       try {
         const res = await getServices();
-        if (res.data?.length) {
-          setServices(res.data);
-          setFiltered(res.data);
+        if (res.data && Array.isArray(res.data) && res.data.length > 0) {
+          const mappedServices = res.data.map((s: any): Service => {
+             let parsedFeatures = [];
+             try {
+                parsedFeatures = typeof s.features === 'string' ? JSON.parse(s.features) : (s.features || ["Standard feature"]);
+             } catch (e) {
+                parsedFeatures = ["Available Features"]; 
+             }
+             
+             return {
+                id: s.id.toString(),
+                title: s.name || s.title || "Service",
+                description: s.description || "Description",
+                shortDescription: s.description ? s.description.substring(0, 120) + "..." : "No description available",
+                price: typeof s.price === 'string' ? (parseInt(s.price.replace(/[^0-9]/g, '')) || 5000) : (s.price || 5000),
+                duration: s.duration || "Flexible",
+                category: s.category || "worldwide",
+                image: s.image_url || "/api/placeholder/800/400",
+                features: Array.isArray(parsedFeatures) ? parsedFeatures : [parsedFeatures],
+                destinations: s.category === 'saudi' ? ["Makkah", "Madinah"] : 
+                             s.category === 'asia-arab' ? ["Turkey", "Dubai"] : ["Worldwide"],
+                rating: s.rating || 4.9,
+                reviewCount: s.reviewCount || 100,
+                popular: s.popular || true,
+             };
+          });
+          setServices(mappedServices);
+          setFiltered(mappedServices);
         } else {
           setServices(MOCK_SERVICES);
           setFiltered(MOCK_SERVICES);
         }
-      } catch {
+      } catch (err) {
+        console.error(err);
         setServices(MOCK_SERVICES);
         setFiltered(MOCK_SERVICES);
       } finally {

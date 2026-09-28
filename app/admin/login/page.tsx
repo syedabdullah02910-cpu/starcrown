@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import api from "@/lib/axios";
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaCheck } from "react-icons/fa";
 import { GiCrown } from "react-icons/gi";
 import Link from "next/link";
@@ -97,7 +98,7 @@ export default function AdminLoginPage() {
     return !emailErr && !passErr;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     
@@ -105,30 +106,38 @@ export default function AdminLoginPage() {
 
     setIsLoading(true);
 
-    // Simulate API Call
-    setTimeout(() => {
-      // For demo purposes, we accept any format-valid email and 6+ char password
-      
-      // Save tokens + data
-      localStorage.setItem("admin_token", "demo_jwt_token_123456789");
-      localStorage.setItem("admin_email", email);
-      localStorage.setItem("admin_name", "System Admin");
-      
-      if (rememberMe) {
-        localStorage.setItem("admin_email_saved", email);
-      } else {
-        localStorage.removeItem("admin_email_saved");
+    try {
+      const response = await api.post('/auth/login', {
+        email: email,
+        password: password,
+      });
+
+      if (response.data.access_token) {
+        // Save token and user info
+        localStorage.setItem('admin_token', response.data.access_token);
+        localStorage.setItem('admin_email', email);
+        if (response.data.full_name) {
+          localStorage.setItem('admin_name', response.data.full_name);
+        }
+
+        if (rememberMe) {
+          localStorage.setItem("admin_email_saved", email);
+        } else {
+          localStorage.removeItem("admin_email_saved");
+        }
+
+        setSuccess(true);
+        
+        // Redirect after 1 second
+        setTimeout(() => {
+          router.push('/admin/dashboard');
+        }, 1000);
       }
-
-      setSuccess(true);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Invalid credentials');
+    } finally {
       setIsLoading(false);
-
-      // Redirect after 1 second
-      setTimeout(() => {
-        router.push("/admin/dashboard");
-      }, 1000);
-      
-    }, 1000);
+    }
   };
 
   if (!mounted) return null;

@@ -12,8 +12,12 @@ function ThankYouContent() {
 
   useEffect(() => {
     const id = searchParams.get('id');
+    const localId = typeof window !== 'undefined' ? localStorage.getItem('last_request_id') : null;
+    
     if (id) {
       setRequestId(id);
+    } else if (localId) {
+      setRequestId(localId);
     } else {
       const randomDigits = Math.floor(100000 + Math.random() * 900000);
       setRequestId(`SR-${randomDigits}`);

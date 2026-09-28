@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import api from "@/lib/axios";
 import { 
   FaUser, 
   FaEnvelope, 
@@ -12,8 +13,6 @@ import {
   FaUsers, 
   FaSpinner 
 } from "react-icons/fa";
-
-const generateRequestId = () => `SR-${Math.floor(100000 + Math.random() * 900000)}`;
 
 export default function ConsultationPage() {
   const router = useRouter();
@@ -36,10 +35,10 @@ export default function ConsultationPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
-    setRequestId(generateRequestId());
   }, []);
 
   const validate = (name: string, value: any): string => {
@@ -125,41 +124,38 @@ export default function ConsultationPage() {
 
     if (validateAll()) {
       setIsSubmitting(true);
+      setSubmitError(null);
       
-      // Simulate API call
-      setTimeout(() => {
-        const payload = {
-          id: requestId,
+      try {
+        const response = await api.post('/quote-requests', {
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
-          service: formData.service,
+          service_id: parseInt(formData.service),
           destination: formData.destination,
           travel_date: formData.travelDate,
           passengers: parseInt(formData.passengers, 10),
           special_requirements: formData.specialRequirements,
-          submitted_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
-        };
+        });
         
-        console.log("Form Submitted:", payload);
-        
-        // Save to localStorage
-        try {
-          const existing = JSON.parse(localStorage.getItem("quote_requests") || "[]");
-          existing.push(payload);
-          localStorage.setItem("quote_requests", JSON.stringify(existing));
-        } catch (err) {
-          console.error("Local storage save failed", err);
+        if (response.data.status === 'success') {
+          // Save request ID
+          if (typeof window !== "undefined") {
+             localStorage.setItem('last_request_id', response.data.data.request_id);
+          }
+          
+          setIsSuccess(true);
+          
+          // Redirect after 2 seconds
+          setTimeout(() => {
+            router.push(`/thank-you?id=${response.data.data.request_id}`);
+          }, 2000);
         }
-
-        setIsSuccess(true);
+      } catch (err: any) {
+        setSubmitError(err.response?.data?.message || 'Failed to submit request');
+      } finally {
         setIsSubmitting(false);
-        
-        setTimeout(() => {
-          router.push(`/thank-you?id=${requestId}`);
-        }, 2000);
-        
-      }, 1500);
+      }
     }
   };
 
@@ -205,7 +201,7 @@ export default function ConsultationPage() {
                 ✓
               </div>
               <h2 className="text-2xl font-bold text-[#22c55e] mb-2">Request submitted successfully!</h2>
-              <p className="text-white mb-2 text-lg">Request ID: <span className="font-mono font-bold">{requestId}</span></p>
+              <p className="text-white mb-2 text-lg">Request ID: <span className="font-mono font-bold">{typeof window !== 'undefined' ? localStorage.getItem('last_request_id') : ''}</span></p>
               <p className="text-gray-300">Our team will contact you within 24 hours.</p>
               <p className="text-sm text-gray-400 mt-6 flex items-center justify-center gap-2">
                 <FaSpinner className="animate-spin" /> Redirecting safely...
@@ -213,6 +209,11 @@ export default function ConsultationPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
+              {submitError && (
+                <div className="bg-[#ef4444]/10 border border-[#ef4444]/30 text-[#ef4444] p-4 rounded-md text-sm text-center">
+                  {submitError}
+                </div>
+              )}
               
               {/* Name */}
               <div>
@@ -282,10 +283,10 @@ export default function ConsultationPage() {
                     className={`w-full bg-[#1a1a1a] border ${errors.service && touched.service ? 'border-[#ef4444]' : 'border-[#444]'} focus:border-[#D4AF37] text-white rounded-md py-3 pl-11 pr-4 transition-colors outline-none appearance-none`}
                   >
                     <option value="">Select a service</option>
-                    <option value="Air Ticketing Worldwide">Air Ticketing Worldwide</option>
-                    <option value="Umrah Packages (Normal/VIP/VVIP)">Umrah Packages (Normal/VIP/VVIP)</option>
-                    <option value="Tourism Packages">Tourism Packages</option>
-                    <option value="Travel Insurance">Travel Insurance</option>
+                    <option value="1">Air Ticketing Worldwide</option>
+                    <option value="2">Umrah Packages (Normal/VIP/VVIP)</option>
+                    <option value="3">Tourism Packages</option>
+                    <option value="4">Travel Insurance</option>
                   </select>
                 </div>
                 {errors.service && touched.service && <p className="text-[#ef4444] text-[12px] mt-1">{errors.service}</p>}

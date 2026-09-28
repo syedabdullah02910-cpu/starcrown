@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import api from '@/lib/axios';
 import { 
   FaHome, 
   FaClipboardList, 
@@ -19,26 +20,25 @@ type RequestStatus = 'pending' | 'quoted' | 'booked' | 'contacted';
 
 interface QuoteRequest {
   id: number;
-  requestId: string;
+  request_id: string;
   name: string;
   phone: string;
-  service: string;
-  date: string;
+  service_id: number;
+  travel_date: string;
   status: RequestStatus;
+  admin_notes?: string;
+  created_at: string;
 }
 
-const initialMockData: QuoteRequest[] = [
-  { id: 1, requestId: "SR-123456", name: "Ahmed Ali", phone: "03001234567", service: "Umrah Packages", date: "2026-08-10", status: "pending" },
-  { id: 2, requestId: "SR-123457", name: "Fatima Khan", phone: "03009876543", service: "Air Ticketing", date: "2026-08-09", status: "quoted" },
-  { id: 3, requestId: "SR-123458", name: "Hassan Ahmed", phone: "03115551234", service: "Tourism Packages", date: "2026-08-08", status: "booked" },
-  { id: 4, requestId: "SR-123459", name: "Aisha Malik", phone: "03201234567", service: "Travel Insurance", date: "2026-08-07", status: "pending" },
-  { id: 5, requestId: "SR-123460", name: "Ali Hassan", phone: "03021234567", service: "Umrah Packages", date: "2026-08-06", status: "quoted" },
-  { id: 6, requestId: "SR-123461", name: "Zainab Khan", phone: "03311234567", service: "Air Ticketing", date: "2026-08-05", status: "booked" },
-  { id: 7, requestId: "SR-123462", name: "Muhammad Ali", phone: "03041234567", service: "Tourism Packages", date: "2026-08-04", status: "contacted" },
-  { id: 8, requestId: "SR-123463", name: "Sana Ahmed", phone: "03215551234", service: "Umrah Packages", date: "2026-08-03", status: "pending" },
-  { id: 9, requestId: "SR-123464", name: "Karim Hassan", phone: "03051234567", service: "Travel Insurance", date: "2026-08-02", status: "quoted" },
-  { id: 10, requestId: "SR-123465", name: "Hina Malik", phone: "03221234567", service: "Air Ticketing", date: "2026-08-01", status: "booked" }
-];
+const getServiceName = (id: number) => {
+  const map: Record<number, string> = {
+    1: 'Air Ticketing',
+    2: 'Umrah Packages',
+    3: 'Tourism Packages',
+    4: 'Travel Insurance'
+  };
+  return map[id] || `Service ${id}`;
+};
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -47,7 +47,15 @@ export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [requests, setRequests] = useState<QuoteRequest[]>(initialMockData);
+  const [requests, setRequests] = useState<QuoteRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    total: 0,
+    pending: 0,
+    quoted: 0,
+    booked: 0,
+    conversion: 0
+  });
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -60,11 +68,48 @@ export default function AdminDashboard() {
     const token = localStorage.getItem('admin_token');
     if (!token) {
       router.push('/admin/login');
-    } else {
-      const name = localStorage.getItem('admin_name');
-      if (name) setAdminName(name);
+      return;
     }
+    
+    const name = localStorage.getItem('admin_name');
+    if (name) setAdminName(name);
+
+    fetchQuotes();
+    fetchAnalytics();
   }, [router]);
+
+  const fetchQuotes = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/admin/quotes');
+      setRequests(response.data);
+    } catch (err: any) {
+      if (err.response?.status === 401) {
+         handleLogout();
+      } else {
+         showToast('Failed to load quotes');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAnalytics = async () => {
+    try {
+      const response = await api.get('/admin/analytics');
+      if (response.data?.data) {
+        setStats({
+          total: response.data.data.total_requests,
+          pending: response.data.data.pending,
+          quoted: response.data.data.quoted,
+          booked: response.data.data.booked,
+          conversion: response.data.data.conversion_rate,
+        });
+      }
+    } catch (err) {
+      console.error('Failed to load analytics');
+    }
+  };
 
   if (!isMounted) return null;
 
@@ -80,12 +125,24 @@ export default function AdminDashboard() {
     setTimeout(() => setToastMessage(''), 3000);
   };
 
-  const handleUpdateStatus = (requestId: string, newStatus: RequestStatus) => {
-    setRequests(prev => prev.map(req => 
-      req.requestId === requestId ? { ...req, status: newStatus } : req
-    ));
-    setActiveDropdown(null);
-    showToast('Status updated successfully');
+  const handleUpdateStatus = async (id: number, newStatus: RequestStatus) => {
+    try {
+      await api.put(`/admin/quotes/${id}`, {
+        status: newStatus,
+        admin_notes: ""
+      });
+      // Update local state
+      setRequests(prev => prev.map(req => 
+        req.id === id ? { ...req, status: newStatus } : req
+      ));
+      // Refresh analytics
+      fetchAnalytics();
+      
+      setActiveDropdown(null);
+      showToast('Status updated successfully');
+    } catch (err) {
+      showToast('Failed to update quote status');
+    }
   };
 
   const filteredRequests = requests.filter(req => {
@@ -115,42 +172,42 @@ export default function AdminDashboard() {
         <div className="bg-[#2d2d2d] border border-[#444] rounded-lg p-6 hover:border-[#D4AF37] transition-colors">
           <div className="flex justify-between items-start mb-2">
             <div>
-              <p className="text-[48px] font-bold text-[#D4AF37] leading-none mb-2">245</p>
+              <p className="text-[48px] font-bold text-[#D4AF37] leading-none mb-2">{stats.total}</p>
               <p className="text-[#A0A0A0] text-sm">Total Quote Requests</p>
             </div>
             <FaClipboardList className="text-[48px] text-[#D4AF37]" />
           </div>
-          <p className="text-[#22c55e] text-sm">↑ 12% from last month</p>
+          <p className="text-[#22c55e] text-sm">↑ Live Data</p>
         </div>
         <div className="bg-[#2d2d2d] border border-[#444] rounded-lg p-6 hover:border-[#D4AF37] transition-colors">
           <div className="flex justify-between items-start mb-2">
             <div>
-              <p className="text-[48px] font-bold text-[#F59E0B] leading-none mb-2">32</p>
+              <p className="text-[48px] font-bold text-[#F59E0B] leading-none mb-2">{stats.pending}</p>
               <p className="text-[#A0A0A0] text-sm">Pending Quotes</p>
             </div>
             <span className="text-[48px] text-[#F59E0B]">⏳</span>
           </div>
-          <p className="text-[#22c55e] text-sm">↑ 5 new</p>
+          <p className="text-[#22c55e] text-sm">Action Required</p>
         </div>
         <div className="bg-[#2d2d2d] border border-[#444] rounded-lg p-6 hover:border-[#D4AF37] transition-colors">
           <div className="flex justify-between items-start mb-2">
             <div>
-              <p className="text-[48px] font-bold text-[#10B981] leading-none mb-2">156</p>
+              <p className="text-[48px] font-bold text-[#10B981] leading-none mb-2">{stats.quoted}</p>
               <p className="text-[#A0A0A0] text-sm">Quoted to Customers</p>
             </div>
             <span className="text-[48px] text-[#10B981]">✓</span>
           </div>
-          <p className="text-[#22c55e] text-sm">↑ 23 this month</p>
+          <p className="text-[#22c55e] text-sm">Needs Follow Up</p>
         </div>
         <div className="bg-[#2d2d2d] border border-[#444] rounded-lg p-6 hover:border-[#D4AF37] transition-colors">
           <div className="flex justify-between items-start mb-2">
             <div>
-              <p className="text-[48px] font-bold text-[#3B82F6] leading-none mb-2">63.7%</p>
+              <p className="text-[48px] font-bold text-[#3B82F6] leading-none mb-2">{stats.conversion}%</p>
               <p className="text-[#A0A0A0] text-sm">Conversion Rate</p>
             </div>
             <FaChartBar className="text-[48px] text-[#3B82F6]" />
           </div>
-          <p className="text-[#22c55e] text-sm">↑ 2.3% improvement</p>
+          <p className="text-[#22c55e] text-sm">Successful Bookings</p>
         </div>
       </div>
 
@@ -174,13 +231,15 @@ export default function AdminDashboard() {
           </tr>
         </thead>
         <tbody>
-          {filteredRequests.map((req, i) => (
-            <tr key={req.requestId} className={`border-b border-[#444] hover:border-l-4 hover:border-l-[#D4AF37] transition-all bg-[#2d2d2d]`}>
-              <td className="p-4">{req.requestId}</td>
+          {loading ? (
+             <tr><td colSpan={7} className="p-4 text-center text-[#A0A0A0]">Loading data from backend...</td></tr>
+          ) : filteredRequests.map((req, i) => (
+            <tr key={req.request_id} className={`border-b border-[#444] hover:border-l-4 hover:border-l-[#D4AF37] transition-all bg-[#2d2d2d]`}>
+              <td className="p-4">{req.request_id}</td>
               <td className="p-4">{req.name}</td>
               <td className="p-4">{req.phone}</td>
-              <td className="p-4">{req.service}</td>
-              <td className="p-4">{req.date}</td>
+              <td className="p-4">{getServiceName(req.service_id)}</td>
+              <td className="p-4">{req.travel_date}</td>
               <td className="p-4">{getStatusBadge(req.status)}</td>
               <td className="p-4 relative">
                 <div className="flex gap-2">
@@ -188,20 +247,20 @@ export default function AdminDashboard() {
                     View
                   </button>
                   <button 
-                    onClick={() => setActiveDropdown(activeDropdown === req.requestId ? null : req.requestId)}
+                    onClick={() => setActiveDropdown(activeDropdown === req.request_id ? null : req.request_id)}
                     className="bg-[#D4AF37] text-[#1a1a1a] px-2 py-1 flex items-center gap-1 rounded text-sm font-semibold hover:bg-[#D4AF37]/90"
                     aria-haspopup="true"
-                    aria-expanded={activeDropdown === req.requestId}
+                    aria-expanded={activeDropdown === req.request_id}
                   >
-                    Update {activeDropdown === req.requestId ? <FaSortUp className="mt-1" /> : <FaSortDown className="-mt-1"/>}
+                    Update {activeDropdown === req.request_id ? <FaSortUp className="mt-1" /> : <FaSortDown className="-mt-1"/>}
                   </button>
                 </div>
-                {activeDropdown === req.requestId && (
-                  <div className="absolute top-12 right-4 bg-[#1a1a1a] border border-[#444] rounded shadow-lg z-50 flex flex-col min-w-[120px]">
-                    <button onClick={() => handleUpdateStatus(req.requestId, 'pending')} className="p-2 text-left hover:bg-[#2d2d2d] text-sm text-[#F59E0B]">Pending</button>
-                    <button onClick={() => handleUpdateStatus(req.requestId, 'quoted')} className="p-2 text-left hover:bg-[#2d2d2d] text-sm text-[#3B82F6]">Quoted</button>
-                    <button onClick={() => handleUpdateStatus(req.requestId, 'booked')} className="p-2 text-left hover:bg-[#2d2d2d] text-sm text-[#10B981]">Booked</button>
-                    <button onClick={() => handleUpdateStatus(req.requestId, 'contacted')} className="p-2 text-left hover:bg-[#2d2d2d] text-sm text-[#6B7280]">Contacted</button>
+                {activeDropdown === req.request_id && (
+                  <div className="absolute top-8 right-20 bg-[#1a1a1a] border border-[#444] rounded shadow-lg z-[60] flex flex-col min-w-[120px]">
+                    <button onClick={() => handleUpdateStatus(req.id, 'pending')} className="p-2 text-left hover:bg-[#2d2d2d] text-sm text-[#F59E0B]">Pending</button>
+                    <button onClick={() => handleUpdateStatus(req.id, 'quoted')} className="p-2 text-left hover:bg-[#2d2d2d] text-sm text-[#3B82F6]">Quoted</button>
+                    <button onClick={() => handleUpdateStatus(req.id, 'booked')} className="p-2 text-left hover:bg-[#2d2d2d] text-sm text-[#10B981]">Booked</button>
+                    <button onClick={() => handleUpdateStatus(req.id, 'contacted')} className="p-2 text-left hover:bg-[#2d2d2d] text-sm text-[#6B7280]">Contacted</button>
                   </div>
                 )}
               </td>
