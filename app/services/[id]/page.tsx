@@ -5,6 +5,11 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { FaCheckCircle, FaTimesCircle, FaStar, FaArrowLeft, FaPhoneAlt, FaWhatsapp } from 'react-icons/fa';
+import ScrollProgressBar from '@/components/ScrollProgressBar';
+import TourGallery from '@/components/TourGallery';
+import ScrollReveal from '@/components/ScrollReveal';
+import PremiumButton from '@/components/PremiumButton';
+import { serviceGalleries, serviceHeroImages } from '@/lib/tourMedia';
 
 const servicesData = [
   {
@@ -174,17 +179,24 @@ export default function ServiceDetailsPage() {
     );
   }
 
+  const heroImage = serviceHeroImages[service.id] || service.image;
+  const gallery = serviceGalleries[service.id] || [];
+
   return (
     <main className="min-h-screen bg-[#1a1a1a] text-white pt-[76px] pb-10 overflow-hidden">
+      <ScrollProgressBar />
       {/* HERO SECTION */}
-      <div className="relative w-full h-[450px] overflow-hidden">
-        <Image 
-          src={service.image} 
-          alt={service.name} 
-          fill 
-          className="object-cover"
-          unoptimized
+      <div
+        className="relative w-full h-[min(520px,85vh)] overflow-hidden bg-cover bg-center lg:bg-fixed"
+        style={{ backgroundImage: `url('${heroImage}')` }}
+      >
+        <Image
+          src={heroImage}
+          alt={service.name}
+          fill
+          className="object-cover lg:opacity-0"
           priority
+          sizes="100vw"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1a] via-black/70 to-black/40 flex flex-col items-center justify-center p-4">
           <div className="absolute top-6 left-6 z-10 hidden sm:block">
@@ -192,11 +204,11 @@ export default function ServiceDetailsPage() {
               <FaArrowLeft /> View All Services
             </Link>
           </div>
-          <div className="text-center w-full max-w-4xl mx-auto z-10 mt-8">
+          <div className="text-center w-full max-w-4xl mx-auto z-10 mt-8 animate-fade-in-up">
             <span className="inline-block px-4 py-1.5 mb-6 border border-[#D4AF37] text-[#D4AF37] rounded-full text-xs font-semibold uppercase tracking-widest bg-black/40 backdrop-blur-sm shadow-[0_0_10px_rgba(212,175,55,0.2)]">
               {service.category}
             </span>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-[#D4AF37] mb-6 drop-shadow-lg tracking-tight">
+            <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gold-light to-gold mb-6 drop-shadow-lg tracking-tight">
               {service.name}
             </h1>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 text-lg">
@@ -210,13 +222,14 @@ export default function ServiceDetailsPage() {
                 <span className="text-gray-300 text-sm ml-1 font-medium">({service.reviews} reviews)</span>
               </div>
             </div>
-            <div className="mt-10 flex gap-4 justify-center">
-              <Link href="/consultation">
-                <button className="bg-[#D4AF37] hover:bg-[#b89528] text-black font-bold py-3 px-8 rounded-full transition-transform transform hover:scale-105 shadow-[0_4px_20px_0_rgba(212,175,55,0.4)] text-base active:scale-95 duration-200">
-                  Book Now
-                </button>
+            <div className="mt-10 flex flex-wrap gap-4 justify-center">
+              <Link href="/consultation" className="inline-block">
+                <PremiumButton className="rounded-full py-3 px-8">Book Now</PremiumButton>
               </Link>
-              <a href="tel:03099961987" className="border border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]/10 font-bold py-3 px-6 rounded-full transition-colors flex items-center gap-2">
+              <a
+                href="tel:03099961987"
+                className="inline-flex items-center gap-2 border border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]/10 font-bold py-3 px-6 rounded-full transition-all hover:scale-105"
+              >
                 <FaPhoneAlt /> Call Us
               </a>
             </div>
@@ -227,13 +240,26 @@ export default function ServiceDetailsPage() {
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-16 grid grid-cols-1 lg:grid-cols-3 gap-12 xl:gap-16">
         <div className="lg:col-span-2 space-y-16">
           
+          {gallery.length > 0 && (
+            <ScrollReveal>
+              <section>
+                <h2 className="text-3xl font-bold text-white mb-6 flex items-center gap-3">
+                  <span className="w-1.5 h-8 bg-[#D4AF37] rounded-full inline-block shadow-[0_0_8px_rgba(212,175,55,0.6)]" />
+                  Photo Gallery
+                </h2>
+                <TourGallery images={gallery} />
+              </section>
+            </ScrollReveal>
+          )}
+
           {/* DESCRIPTION SECTION */}
+          <ScrollReveal>
           <section>
             <h2 className="text-3xl font-bold text-white mb-6 flex items-center gap-3">
               <span className="w-1.5 h-8 bg-[#D4AF37] rounded-full inline-block shadow-[0_0_8px_rgba(212,175,55,0.6)]"></span>
               Overview
             </h2>
-            <div className="bg-[#2d2d2d] p-6 md:p-8 rounded-2xl shadow-xl border border-gray-800/60 leading-relaxed text-gray-300 text-lg hover:border-[#D4AF37]/30 transition-colors duration-300">
+            <div className="glass-card p-6 md:p-8 rounded-2xl border border-gold/20 leading-relaxed text-gray-300 text-lg hover:border-[#D4AF37]/40 transition-colors duration-300">
               <p className="mb-5">
                 {service.description}
               </p>
@@ -252,6 +278,7 @@ export default function ServiceDetailsPage() {
               )}
             </div>
           </section>
+          </ScrollReveal>
           
           {/* SUB-PACKAGES TIERS (Only for Umrah currently) */}
           {service.subPackages.length > 0 && (
@@ -280,13 +307,17 @@ export default function ServiceDetailsPage() {
               <span className="w-1.5 h-8 bg-[#D4AF37] rounded-full inline-block shadow-[0_0_8px_rgba(212,175,55,0.6)]"></span>
               {service.id === 1 ? "Booking Process" : "Process / Itinerary"}
             </h2>
-            <div className="relative border-l-2 border-[#D4AF37]/30 ml-4 md:ml-6 space-y-8 pb-4">
+            <div className="space-y-6">
               {service.itinerary.map((step, index) => (
-                <div key={index} className="relative pl-8 md:pl-12 group cursor-default">
-                  <div className="absolute -left-[17px] top-1.5 h-8 w-8 bg-[#1a1a1a] border-2 border-[#D4AF37] rounded-full flex items-center justify-center text-[#D4AF37] font-bold shadow-[0_0_10px_rgba(212,175,55,0.2)] group-hover:bg-[#D4AF37] group-hover:text-black transition-all duration-300 z-10 group-hover:scale-110">
+                <div
+                  key={index}
+                  className="flex gap-4 animate-slide-in-left"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gold-gradient flex items-center justify-center font-bold text-dark shadow-gold">
                     {index + 1}
                   </div>
-                  <div className="bg-[#2d2d2d] border border-gray-800/80 p-5 rounded-xl shadow-lg group-hover:border-[#D4AF37]/60 group-hover:shadow-[0_0_15px_rgba(212,175,55,0.15)] transition-all duration-300 transform group-hover:-translate-y-1">
+                  <div className="flex-1 glass-card p-4 md:p-5 rounded-lg border-l-4 border-gold hover:border-gold-light transition-colors">
                     <p className="text-gray-200 text-lg font-medium">{step}</p>
                   </div>
                 </div>
@@ -316,7 +347,7 @@ export default function ServiceDetailsPage() {
           <section className="bg-gradient-to-br from-[#2d2d2d] to-[#252525] p-6 md:p-8 rounded-2xl shadow-xl border border-[#D4AF37]/30 relative overflow-hidden group hover:border-[#D4AF37]/60 transition-colors duration-300">
             <div className="absolute top-0 right-0 w-32 h-32 bg-[#D4AF37]/10 rounded-bl-full -z-0 transition-transform duration-500 group-hover:scale-110"></div>
             <h3 className="text-xl md:text-2xl font-bold text-white mb-6 relative z-10 border-b border-gray-700/80 pb-4">
-              What's Included
+              What&apos;s Included
             </h3>
             <ul className="space-y-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-x-6 relative z-10">
               {service.includes.map((item, index) => (
@@ -333,7 +364,7 @@ export default function ServiceDetailsPage() {
           {/* WHAT'S EXCLUDED SECTION */}
           <section className="bg-[#2d2d2d] p-6 md:p-8 rounded-2xl shadow-xl border border-gray-800/80 relative overflow-hidden group hover:border-gray-700 transition-colors duration-300">
             <h3 className="text-xl md:text-2xl font-bold text-white mb-6 relative z-10 border-b border-gray-700/80 pb-4">
-              What's Not Included
+              What&apos;s Not Included
             </h3>
             <ul className="space-y-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-x-6 relative z-10">
               {service.excludes.map((item, index) => (
@@ -362,10 +393,10 @@ export default function ServiceDetailsPage() {
             Our experts at Star Crown Tour will assist you within 24 hours.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/consultation">
-              <button className="bg-[#D4AF37] hover:bg-[#b89528] text-black font-bold text-lg py-4 px-12 rounded-full transition-transform transform hover:scale-105 shadow-[0_0_25px_rgba(212,175,55,0.4)] active:scale-95 duration-200 w-full sm:w-auto">
+            <Link href="/consultation" className="inline-block w-full sm:w-auto">
+              <PremiumButton className="rounded-full text-lg py-4 px-12 w-full sm:w-auto">
                 Get Consultation
-              </button>
+              </PremiumButton>
             </Link>
           </div>
         </div>

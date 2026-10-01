@@ -73,17 +73,17 @@ function ThankYouContent() {
 
         {/* Info Cards Section */}
         <div className="mb-16">
-          <h2 className="text-[32px] font-bold text-[#D4AF37] text-center mb-8">What's Next?</h2>
+          <h2 className="text-[32px] font-bold text-[#D4AF37] text-center mb-8">What&apos;s Next?</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="bg-[#2d2d2d] border border-[#444] rounded-lg p-6 hover:border-[#D4AF37] transition-all duration-300">
               <FaPhone className="text-[#A0A0A0] text-[32px] mb-4" />
-              <h3 className="text-xl font-bold mb-2">We'll Contact You Soon</h3>
+              <h3 className="text-xl font-bold mb-2">We&apos;ll Contact You Soon</h3>
               <p className="text-[#A0A0A0]">Our team will reach out within 24 hours via phone or email</p>
             </div>
             <div className="bg-[#2d2d2d] border border-[#444] rounded-lg p-6 hover:border-[#D4AF37] transition-all duration-300">
               <FaEnvelope className="text-[#A0A0A0] text-[32px] mb-4" />
               <h3 className="text-xl font-bold mb-2">Check Your Email</h3>
-              <p className="text-[#A0A0A0]">We've sent a confirmation email with your request details</p>
+              <p className="text-[#A0A0A0]">We&apos;ve sent a confirmation email with your request details</p>
             </div>
             <div className="bg-[#2d2d2d] border border-[#444] rounded-lg p-6 hover:border-[#D4AF37] transition-all duration-300">
               <FaChartBar className="text-[#A0A0A0] text-[32px] mb-4" />

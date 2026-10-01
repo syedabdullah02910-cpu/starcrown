@@ -6,6 +6,8 @@ import { getServices } from "@/lib/api";
 import { Service } from "@/types";
 import { FiSearch, FiFilter } from "react-icons/fi";
 import { GiCrown } from "react-icons/gi";
+import { serviceCardImages } from "@/lib/tourMedia";
+import Image from "next/image";
 
 // Ensure the Service type matches this, or allow extending it in reality.
 const MOCK_SERVICES: Service[] = [
@@ -17,7 +19,7 @@ const MOCK_SERVICES: Service[] = [
     price: 8000,
     duration: "Flexible",
     category: "air_tickets",
-    image: "/api/placeholder/800/400",
+    image: serviceCardImages.air_tickets,
     features: ["Global Destinations", "Major Airlines", "Best Fares", "24/7 Support"],
     destinations: ["Worldwide"],
     rating: 4.8,
@@ -32,7 +34,7 @@ const MOCK_SERVICES: Service[] = [
     price: 150000,
     duration: "7 - 14 Days",
     category: "umrah",
-    image: "/api/placeholder/800/400",
+    image: serviceCardImages.umrah,
     features: ["Flights Included", "Makkah & Madinah Hotels", "Visa Processing", "Transfers"],
     destinations: ["Makkah", "Madinah"],
     rating: 4.9,
@@ -47,7 +49,7 @@ const MOCK_SERVICES: Service[] = [
     price: 100000,
     duration: "4 - 10 Days",
     category: "tourism",
-    image: "/api/placeholder/800/400",
+    image: serviceCardImages.tourism,
     features: ["Hotels", "Guided Tours", "Meals", "Transfers"],
     destinations: ["Turkey", "Singapore", "Dubai", "Malaysia"],
     rating: 4.8,
@@ -62,7 +64,7 @@ const MOCK_SERVICES: Service[] = [
     price: 2500,
     duration: "Varies",
     category: "insurance",
-    image: "/api/placeholder/800/400",
+    image: serviceCardImages.insurance,
     features: ["Medical Coverage", "Luggage Loss", "Trip Cancellation", "24/7 Hotline"],
     destinations: ["Worldwide"],
     rating: 4.6,
@@ -87,29 +89,39 @@ export default function ServicesPage() {
       try {
         const res = await getServices();
         if (res.data && Array.isArray(res.data) && res.data.length > 0) {
-          const mappedServices = res.data.map((s: any): Service => {
-             let parsedFeatures = [];
+          const mappedServices = res.data.map((s: Record<string, unknown>): Service => {
+             let parsedFeatures: string[] = [];
              try {
-                parsedFeatures = typeof s.features === 'string' ? JSON.parse(s.features) : (s.features || ["Standard feature"]);
-             } catch (e) {
+                parsedFeatures = typeof s.features === 'string' ? JSON.parse(s.features) : (Array.isArray(s.features) ? s.features as string[] : ["Standard feature"]);
+             } catch {
                 parsedFeatures = ["Available Features"]; 
              }
              
+             const description = String(s.description ?? "Description");
+             const priceRaw = s.price;
+             const price =
+               typeof priceRaw === "string"
+                 ? parseInt(priceRaw.replace(/[^0-9]/g, ""), 10) || 5000
+                 : typeof priceRaw === "number"
+                   ? priceRaw
+                   : 5000;
+             const category = String(s.category ?? "worldwide");
+
              return {
-                id: s.id.toString(),
-                title: s.name || s.title || "Service",
-                description: s.description || "Description",
-                shortDescription: s.description ? s.description.substring(0, 120) + "..." : "No description available",
-                price: typeof s.price === 'string' ? (parseInt(s.price.replace(/[^0-9]/g, '')) || 5000) : (s.price || 5000),
-                duration: s.duration || "Flexible",
-                category: s.category || "worldwide",
-                image: s.image_url || "/api/placeholder/800/400",
-                features: Array.isArray(parsedFeatures) ? parsedFeatures : [parsedFeatures],
-                destinations: s.category === 'saudi' ? ["Makkah", "Madinah"] : 
-                             s.category === 'asia-arab' ? ["Turkey", "Dubai"] : ["Worldwide"],
-                rating: s.rating || 4.9,
-                reviewCount: s.reviewCount || 100,
-                popular: s.popular || true,
+                id: String(s.id ?? ""),
+                title: String(s.name ?? s.title ?? "Service"),
+                description,
+                shortDescription: description.length > 120 ? `${description.substring(0, 120)}...` : description,
+                price,
+                duration: String(s.duration ?? "Flexible"),
+                category,
+                image: String(s.image_url ?? "/api/placeholder/800/400"),
+                features: parsedFeatures,
+                destinations: category === "saudi" ? ["Makkah", "Madinah"] :
+                             category === "asia-arab" ? ["Turkey", "Dubai"] : ["Worldwide"],
+                rating: typeof s.rating === "number" ? s.rating : 4.9,
+                reviewCount: typeof s.reviewCount === "number" ? s.reviewCount : 100,
+                popular: Boolean(s.popular ?? true),
              };
           });
           setServices(mappedServices);
@@ -152,43 +164,55 @@ export default function ServicesPage() {
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-20">
+    <div className="min-h-screen bg-neutral-50 pt-24 pb-20">
       {/* Header */}
-      <div className="bg-dark-card border-b border-dark-border py-20 text-center">
-        <div className="section-tag mb-6 mx-auto w-fit">
-          <GiCrown className="text-gold" /> Our Services
+      <div className="relative border-b border-neutral-200 py-24 text-center overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <Image 
+            src="https://images.unsplash.com/photo-1540962351504-03077e80460e?q=80&w=2000"
+            alt="Premium Travel Services"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-primary/80 backdrop-blur-sm" />
         </div>
-        <h1 className="font-serif text-5xl md:text-6xl font-bold text-white mb-4">
-          Premium Travel <span className="text-gold">Solutions</span>
-        </h1>
-        <p className="text-silver-dark text-lg max-w-xl mx-auto">
-          Explore our complete range of travel services designed to give you peace of mind and unforgettable experiences.
-        </p>
+        <div className="relative z-10 w-full max-w-5xl mx-auto px-4">
+          <div className="section-tag mb-6 mx-auto w-fit text-white bg-white/10 border-white/20">
+            <GiCrown className="text-gold" /> Our Services
+          </div>
+          <h1 className="font-serif text-5xl md:text-6xl font-bold text-white mb-6 drop-shadow-md">
+            Premium Travel <span className="text-gold-light">Solutions</span>
+          </h1>
+          <p className="text-neutral-200 text-lg max-w-2xl mx-auto tracking-wide">
+            Explore our complete range of travel services designed to give you peace of mind and unforgettable experiences.
+          </p>
+        </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Search + Filter */}
         <div className="flex flex-col md:flex-row gap-4 mb-10">
-          <div className="flex-1 relative">
-            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-silver-dark" />
+          <div className="flex-1 relative shadow-sm">
+            <FiSearch className="absolute left-5 top-1/2 -translate-y-1/2 text-neutral-400 text-lg" />
             <input
               type="text"
               placeholder="Search services, destinations..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-dark-card border border-dark-border rounded-full pl-11 pr-5 py-3.5 text-white placeholder-silver-dark text-sm focus:outline-none focus:border-gold transition-colors"
+              className="w-full bg-white border border-neutral-200 rounded-full pl-12 pr-5 py-3.5 text-neutral-900 placeholder-neutral-400 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
             />
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <FiFilter className="text-silver-dark shrink-0" />
+            <FiFilter className="text-neutral-500 shrink-0 mx-2" />
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-4 py-2 rounded-full text-sm font-medium capitalize transition-all duration-300 ${
+                className={`px-5 py-2.5 rounded-full text-sm font-medium capitalize transition-all duration-300 shadow-sm ${
                   activeCategory === cat
-                    ? "bg-gold-gradient text-dark"
-                    : "border border-dark-border text-silver-dark hover:border-gold/40 hover:text-gold"
+                    ? "bg-primary text-white shadow-md scale-105"
+                    : "bg-white border border-neutral-200 text-neutral-600 hover:border-primary/40 hover:text-primary"
                 }`}
               >
                 {formatCategory(cat)}
@@ -198,31 +222,31 @@ export default function ServicesPage() {
         </div>
 
         {/* Results count */}
-        <p className="text-silver-dark text-sm mb-6">
+        <p className="text-neutral-500 text-sm mb-6 font-medium">
           {filtered.length} package{filtered.length !== 1 ? "s" : ""} found
         </p>
 
         {/* Grid */}
         {loading ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {Array.from({ length: 4 }).map((_, i) => (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className="h-80 bg-dark-card border border-dark-border rounded-2xl animate-pulse"
+                className="h-[420px] bg-white border border-neutral-200 rounded-2xl animate-pulse shadow-sm"
               />
             ))}
           </div>
         ) : filtered.length > 0 ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filtered.map((service, i) => (
               <ServiceCard key={service.id} service={service} index={i} />
             ))}
           </div>
         ) : (
-          <div className="text-center py-20">
-            <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-white text-xl font-semibold mb-2">No results found</h3>
-            <p className="text-silver-dark text-sm">
+          <div className="text-center py-20 bg-white rounded-2xl border border-neutral-200 shadow-sm">
+            <div className="text-6xl mb-4 opacity-50">🔍</div>
+            <h3 className="text-neutral-900 text-xl font-bold mb-2 font-serif">No results found</h3>
+            <p className="text-neutral-500 text-sm">
               Try adjusting your search or filter criteria.
             </p>
           </div>

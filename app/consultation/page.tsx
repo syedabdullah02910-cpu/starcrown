@@ -17,8 +17,6 @@ import {
 export default function ConsultationPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const [requestId, setRequestId] = useState("");
-  
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -41,39 +39,47 @@ export default function ConsultationPage() {
     setMounted(true);
   }, []);
 
-  const validate = (name: string, value: any): string => {
+  const validate = (name: string, value: unknown): string => {
     switch (name) {
-      case "name":
-        if (!value) return "Full Name is required";
-        if (value.length < 3) return "Name must be at least 3 characters";
-        if (value.length > 100) return "Name is too long";
-        if (/[^a-zA-Z\s.-]/.test(value)) return "Name cannot contain special characters";
+      case "name": {
+        const name = String(value ?? "");
+        if (!name) return "Full Name is required";
+        if (name.length < 3) return "Name must be at least 3 characters";
+        if (name.length > 100) return "Name is too long";
+        if (/[^a-zA-Z\s.-]/.test(name)) return "Name cannot contain special characters";
         return "";
-      case "email":
-        if (!value) return "Email is required";
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Please enter a valid email";
+      }
+      case "email": {
+        const email = String(value ?? "");
+        if (!email) return "Email is required";
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Please enter a valid email";
         return "";
-      case "phone":
-        if (!value) return "Phone number is required";
-        if (!value.startsWith("+92")) return "Phone must start with +92";
-        if (!/^\+92\s?[0-9\s-]{9,11}$/.test(value)) return "Format: +92 300 1234567";
+      }
+      case "phone": {
+        const phone = String(value ?? "");
+        if (!phone) return "Phone number is required";
+        if (!phone.startsWith("+92")) return "Phone must start with +92";
+        if (!/^\+92\s?[0-9\s-]{9,11}$/.test(phone)) return "Format: +92 300 1234567";
         return "";
+      }
       case "service":
         if (!value || value === "Select a service") return "Please select a service";
         return "";
-      case "travelDate":
+      case "travelDate": {
         if (!value) return "Travel Date is required";
-        const selectedDate = new Date(value);
+        const selectedDate = new Date(String(value));
         const minDate = new Date();
         minDate.setDate(minDate.getDate() + 7);
         minDate.setHours(0,0,0,0);
         if (selectedDate < minDate) return "Date must be at least 7 days from today";
         return "";
-      case "passengers":
+      }
+      case "passengers": {
         if (!value) return "Number of passengers is required";
-        const num = parseInt(value, 10);
+        const num = parseInt(String(value), 10);
         if (isNaN(num) || num < 1 || num > 10) return "Must be between 1 and 10";
         return "";
+      }
       case "terms":
         if (!value) return "You must agree to the terms and conditions";
         return "";
@@ -84,8 +90,7 @@ export default function ConsultationPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
-    // @ts-ignore
-    const checked = type === "checkbox" ? e.target.checked : undefined;
+    const checked = type === "checkbox" ? (e.target as HTMLInputElement).checked : undefined;
     const finalValue = type === "checkbox" ? checked : value;
     
     setFormData(prev => ({ ...prev, [name]: finalValue }));
@@ -97,8 +102,7 @@ export default function ConsultationPage() {
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
-    // @ts-ignore
-    const finalValue = type === "checkbox" ? e.target.checked : value;
+    const finalValue = type === "checkbox" ? (e.target as HTMLInputElement).checked : value;
     
     setTouched(prev => ({ ...prev, [name]: true }));
     setErrors(prev => ({ ...prev, [name]: validate(name, finalValue) }));
@@ -107,8 +111,7 @@ export default function ConsultationPage() {
   const validateAll = () => {
     const newErrors: Record<string, string> = {};
     Object.keys(formData).forEach(key => {
-      // @ts-ignore
-      const err = validate(key, formData[key]);
+      const err = validate(key, formData[key as keyof typeof formData]);
       if (err) newErrors[key] = err;
     });
     setErrors(newErrors);
@@ -151,8 +154,12 @@ export default function ConsultationPage() {
             router.push(`/thank-you?id=${response.data.data.request_id}`);
           }, 2000);
         }
-      } catch (err: any) {
-        setSubmitError(err.response?.data?.message || 'Failed to submit request');
+      } catch (err: unknown) {
+        const message =
+          err && typeof err === "object" && "response" in err
+            ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+            : undefined;
+        setSubmitError(message || 'Failed to submit request');
       } finally {
         setIsSubmitting(false);
       }
@@ -174,7 +181,7 @@ export default function ConsultationPage() {
           Get Your Free <span className="text-[#D4AF37]">Consultation</span>
         </h1>
         <p className="text-gray-300 text-lg max-w-2xl mx-auto mb-8">
-          Tell us about your travel plans and we'll create the perfect package for you.
+          Tell us about your travel plans and we&apos;ll create the perfect package for you.
         </p>
 
         {/* Contact info banner */}

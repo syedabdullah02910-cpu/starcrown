@@ -133,8 +133,12 @@ export default function AdminLoginPage() {
           router.push('/admin/dashboard');
         }, 1000);
       }
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Invalid credentials');
+    } catch (err: unknown) {
+      const detail =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
+          : undefined;
+      setError(detail || 'Invalid credentials');
     } finally {
       setIsLoading(false);
     }

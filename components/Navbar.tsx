@@ -57,8 +57,8 @@ export default function Navbar() {
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         scrolled
-          ? "bg-dark-nav/95 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.6)] border-b border-dark-border"
-          : "bg-transparent"
+          ? "bg-primary/95 backdrop-blur-xl shadow-md border-b border-white/10 text-white"
+          : "bg-transparent text-white"
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -70,10 +70,10 @@ export default function Navbar() {
               <div className="absolute inset-0 bg-gold/20 rounded-full blur-lg scale-0 group-hover:scale-150 transition-transform duration-500" />
             </div>
             <div className="flex flex-col leading-tight">
-              <span className="font-serif text-xl font-bold text-gold">
+              <span className="font-serif text-xl font-bold text-white drop-shadow-sm group-hover:text-gold transition-colors">
                 Star Crown
               </span>
-              <span className="text-silver-dark text-[10px] tracking-[0.25em] uppercase font-medium">
+              <span className="text-gold-light text-[10px] tracking-[0.25em] uppercase font-bold drop-shadow-sm">
                 Tour
               </span>
             </div>
@@ -88,7 +88,7 @@ export default function Navbar() {
                 className={`relative text-sm font-medium transition-colors duration-300 group ${
                   pathname === item.href
                     ? "text-gold"
-                    : "text-silver hover:text-gold"
+                    : "text-white/90 hover:text-gold"
                 }`}
               >
                 {item.label}
@@ -116,11 +116,11 @@ export default function Navbar() {
                   />
                 </button>
                 {userOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-48 bg-dark-card border border-dark-border rounded-xl shadow-card overflow-hidden animate-fade-in">
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-neutral-200 rounded-xl shadow-soft overflow-hidden animate-fade-in">
                     <Link
                       href="/dashboard"
                       onClick={() => setUserOpen(false)}
-                      className="flex items-center gap-2 px-4 py-3 text-silver hover:text-gold hover:bg-dark-hover transition-all text-sm"
+                      className="flex items-center gap-2 px-4 py-3 text-neutral-700 hover:text-primary hover:bg-neutral-50 transition-all text-sm"
                     >
                       <FiSettings /> Dashboard
                     </Link>
@@ -128,14 +128,14 @@ export default function Navbar() {
                       <Link
                         href="/dashboard/admin"
                         onClick={() => setUserOpen(false)}
-                        className="flex items-center gap-2 px-4 py-3 text-silver hover:text-gold hover:bg-dark-hover transition-all text-sm"
+                        className="flex items-center gap-2 px-4 py-3 text-neutral-700 hover:text-primary hover:bg-neutral-50 transition-all text-sm"
                       >
                         <FiSettings /> Admin Panel
                       </Link>
                     )}
                     <button
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-2 px-4 py-3 text-red-400 hover:bg-dark-hover transition-all text-sm border-t border-dark-border"
+                      className="w-full flex items-center gap-2 px-4 py-3 text-red-500 hover:bg-red-50 transition-all text-sm border-t border-neutral-100"
                     >
                       <FiLogOut /> Logout
                     </button>
@@ -146,13 +146,13 @@ export default function Navbar() {
               <>
                 <Link
                   href="/auth/login"
-                  className="text-silver hover:text-gold text-sm font-medium transition-colors duration-300"
+                  className="text-white/90 hover:text-gold text-sm font-medium transition-colors duration-300"
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/auth/register"
-                  className="bg-gold-gradient text-dark font-semibold text-sm px-5 py-2.5 rounded-full hover:opacity-90 hover:shadow-gold transition-all duration-300"
+                  className="bg-gold-gradient text-primary font-bold text-sm px-5 py-2.5 rounded-full hover:scale-105 hover:shadow-gold transition-all duration-300"
                 >
                   Get Started
                 </Link>
@@ -163,7 +163,7 @@ export default function Navbar() {
           {/* Mobile Menu Toggle */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden text-silver hover:text-gold transition-colors p-2"
+            className="md:hidden text-white/90 hover:text-gold transition-colors p-2"
             aria-label="Toggle menu"
           >
             {menuOpen ? (
@@ -177,7 +177,7 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <div className="md:hidden bg-dark-nav/98 backdrop-blur-xl border-t border-dark-border animate-fade-in">
+        <div className="md:hidden bg-primary/98 backdrop-blur-xl border-t border-white/10 animate-fade-in shadow-lg">
           <div className="px-4 py-6 space-y-4">
             {navItems.map((item) => (
               <Link
@@ -187,25 +187,25 @@ export default function Navbar() {
                 className={`block py-2 text-base font-medium transition-colors ${
                   pathname === item.href
                     ? "text-gold"
-                    : "text-silver hover:text-gold"
+                    : "text-white/90 hover:text-gold"
                 }`}
               >
                 {item.label}
               </Link>
             ))}
-            <div className="pt-4 border-t border-dark-border flex flex-col gap-3">
+            <div className="pt-4 border-t border-white/10 flex flex-col gap-3">
               {user ? (
                 <>
                   <Link
                     href="/dashboard"
                     onClick={() => setMenuOpen(false)}
-                    className="text-silver hover:text-gold text-base"
+                    className="text-white/90 hover:text-gold text-base"
                   >
                     Dashboard
                   </Link>
                   <button
                     onClick={handleLogout}
-                    className="text-left text-red-400 text-base"
+                    className="text-left text-white/90 hover:text-red-400 text-base"
                   >
                     Logout
                   </button>
@@ -215,14 +215,14 @@ export default function Navbar() {
                   <Link
                     href="/auth/login"
                     onClick={() => setMenuOpen(false)}
-                    className="text-silver hover:text-gold text-base"
+                    className="text-white/90 hover:text-gold text-base"
                   >
                     Sign In
                   </Link>
                   <Link
                     href="/auth/register"
                     onClick={() => setMenuOpen(false)}
-                    className="bg-gold-gradient text-dark font-semibold text-sm px-5 py-2.5 rounded-full text-center"
+                    className="bg-gold-gradient text-primary font-bold text-sm px-5 py-2.5 rounded-full text-center"
                   >
                     Get Started
                   </Link>

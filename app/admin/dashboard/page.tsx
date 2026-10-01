@@ -11,7 +11,6 @@ import {
   FaSignOutAlt, 
   FaBars, 
   FaTimes,
-  FaCheck,
   FaSortUp,
   FaSortDown
 } from 'react-icons/fa';
@@ -70,29 +69,54 @@ export default function AdminDashboard() {
       router.push('/admin/login');
       return;
     }
-    
+
     const name = localStorage.getItem('admin_name');
     if (name) setAdminName(name);
 
-    fetchQuotes();
-    fetchAnalytics();
-  }, [router]);
-
-  const fetchQuotes = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get('/admin/quotes');
-      setRequests(response.data);
-    } catch (err: any) {
-      if (err.response?.status === 401) {
-         handleLogout();
-      } else {
-         showToast('Failed to load quotes');
+    const loadQuotes = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/admin/quotes');
+        setRequests(response.data);
+      } catch (err: unknown) {
+        const status =
+          err && typeof err === "object" && "response" in err
+            ? (err as { response?: { status?: number } }).response?.status
+            : undefined;
+        if (status === 401) {
+          localStorage.removeItem('admin_token');
+          localStorage.removeItem('admin_name');
+          localStorage.removeItem('admin_email');
+          router.push('/admin/login');
+        } else {
+          setToastMessage('Failed to load quotes');
+          setTimeout(() => setToastMessage(''), 3000);
+        }
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    const loadAnalytics = async () => {
+      try {
+        const response = await api.get('/admin/analytics');
+        if (response.data?.data) {
+          setStats({
+            total: response.data.data.total_requests,
+            pending: response.data.data.pending,
+            quoted: response.data.data.quoted,
+            booked: response.data.data.booked,
+            conversion: response.data.data.conversion_rate,
+          });
+        }
+      } catch {
+        console.error('Failed to load analytics');
+      }
+    };
+
+    loadQuotes();
+    loadAnalytics();
+  }, [router]);
 
   const fetchAnalytics = async () => {
     try {
@@ -106,7 +130,7 @@ export default function AdminDashboard() {
           conversion: response.data.data.conversion_rate,
         });
       }
-    } catch (err) {
+    } catch {
       console.error('Failed to load analytics');
     }
   };
@@ -140,7 +164,7 @@ export default function AdminDashboard() {
       
       setActiveDropdown(null);
       showToast('Status updated successfully');
-    } catch (err) {
+    } catch {
       showToast('Failed to update quote status');
     }
   };
@@ -233,7 +257,7 @@ export default function AdminDashboard() {
         <tbody>
           {loading ? (
              <tr><td colSpan={7} className="p-4 text-center text-[#A0A0A0]">Loading data from backend...</td></tr>
-          ) : filteredRequests.map((req, i) => (
+          ) : filteredRequests.map((req) => (
             <tr key={req.request_id} className={`border-b border-[#444] hover:border-l-4 hover:border-l-[#D4AF37] transition-all bg-[#2d2d2d]`}>
               <td className="p-4">{req.request_id}</td>
               <td className="p-4">{req.name}</td>
